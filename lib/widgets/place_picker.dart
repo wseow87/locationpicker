@@ -27,7 +27,10 @@ class PlacePicker extends StatefulWidget {
   final LatLng displayLocation;
   LocalizationItem localizationItem;
 
-  PlacePicker(this.apiKey, {this.displayLocation, this.localizationItem}) {
+  final String region;
+
+  PlacePicker(this.apiKey,
+      {this.displayLocation, this.localizationItem, this.region}) {
     if (this.localizationItem == null) {
       this.localizationItem = new LocalizationItem();
     }
@@ -224,7 +227,7 @@ class PlacePickerState extends State<PlacePicker> {
   void autoCompleteSearch(String place) async {
     try {
       place = place.replaceAll(" ", "+");
-
+      /*
       var endpoint =
           "https://maps.googleapis.com/maps/api/place/autocomplete/json?"
           "key=${widget.apiKey}&"
@@ -236,7 +239,30 @@ class PlacePickerState extends State<PlacePicker> {
             "${this.locationResult.latLng.longitude}";
       }
 
-      final response = await http.get(Uri.parse(endpoint));
+      final response = await http.get(Uri.parse(endpoint));*/
+
+      Map<String, String> params = {
+        "key": widget.apiKey,
+        "language": widget.localizationItem.languageCode,
+        "input": place,
+        "sessiontoken": this.sessionToken,
+      };
+
+      if (this.locationResult != null) {
+        params["location"] = "${this.locationResult.latLng.latitude}," +
+            "${this.locationResult.latLng.longitude}";
+      }
+
+      if (widget.region != null) {
+        params["region"] = widget.region;
+      }
+
+      final Uri url = Uri.https(
+        "maps.googleapis.com",
+        "/maps/api/place/autocomplete/json",
+        params,
+      );
+      final response = await http.get(url);
 
       if (response.statusCode != 200) {
         throw Error();
@@ -287,10 +313,22 @@ class PlacePickerState extends State<PlacePicker> {
     clearOverlay();
 
     try {
+      /*
       final url = Uri.parse(
           "https://maps.googleapis.com/maps/api/place/details/json?key=${widget.apiKey}&" +
               "language=${widget.localizationItem.languageCode}&" +
               "placeid=$placeId");
+      */
+      final Map<String, String> params = {
+        "key": widget.apiKey,
+        "language": widget.localizationItem.languageCode,
+        "placeid": placeId,
+      };
+      final Uri url = Uri.https(
+        "maps.googleapis.com",
+        "/maps/api/place/details/json",
+        params,
+      );
 
       final response = await http.get(url);
 
@@ -366,10 +404,23 @@ class PlacePickerState extends State<PlacePicker> {
   /// Fetches and updates the nearby places to the provided lat,lng
   void getNearbyPlaces(LatLng latLng) async {
     try {
+      /*
       final url = Uri.parse(
           "https://maps.googleapis.com/maps/api/place/nearbysearch/json?"
           "key=${widget.apiKey}&location=${latLng.latitude},${latLng.longitude}"
           "&radius=150&language=${widget.localizationItem.languageCode}");
+      */
+      final Map<String, String> params = {
+        "key": widget.apiKey,
+        "location": "${latLng.latitude},${latLng.longitude}",
+        "radius": "150",
+        "language": widget.localizationItem.languageCode
+      };
+      final Uri url = Uri.https(
+        "maps.googleapis.com",
+        "/maps/api/place/nearbysearch/json",
+        params,
+      );
 
       final response = await http.get(url);
 
@@ -409,10 +460,21 @@ class PlacePickerState extends State<PlacePicker> {
   /// to be the road name and the locality.
   void reverseGeocodeLatLng(LatLng latLng) async {
     try {
-      final url = Uri.parse("https://maps.googleapis.com/maps/api/geocode/json?"
+      /*final url = Uri.parse("https://maps.googleapis.com/maps/api/geocode/json?"
           "latlng=${latLng.latitude},${latLng.longitude}&"
           "language=${widget.localizationItem.languageCode}&"
           "key=${widget.apiKey}");
+      */
+      final Map<String, String> params = {
+        "key": widget.apiKey,
+        "language": widget.localizationItem.languageCode,
+        "latlng": "${latLng.latitude},${latLng.longitude}",
+      };
+      final Uri url = Uri.https(
+        "maps.googleapis.com",
+        "/maps/api/geocode/json",
+        params,
+      );
 
       final response = await http.get(url);
 
