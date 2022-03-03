@@ -343,7 +343,10 @@ class PlacePickerState extends State<PlacePicker> {
       }
 
       final location = responseJson['result']['geometry']['location'];
-      moveToLocation(LatLng(location['lat'], location['lng']));
+      moveToLocation(
+        LatLng(location['lat'], location['lng']),
+        placeResult: responseJson,
+      );
     } catch (e) {
       print(e);
     }
@@ -458,37 +461,44 @@ class PlacePickerState extends State<PlacePicker> {
 
   /// This method gets the human readable name of the location. Mostly appears
   /// to be the road name and the locality.
-  void reverseGeocodeLatLng(LatLng latLng) async {
+  void reverseGeocodeLatLng(LatLng latLng, {dynamic placeResult}) async {
     try {
-      /*final url = Uri.parse("https://maps.googleapis.com/maps/api/geocode/json?"
-          "latlng=${latLng.latitude},${latLng.longitude}&"
-          "language=${widget.localizationItem.languageCode}&"
-          "key=${widget.apiKey}");
-      */
-      final Map<String, String> params = {
-        "key": widget.apiKey,
-        "language": widget.localizationItem.languageCode,
-        "latlng": "${latLng.latitude},${latLng.longitude}",
-      };
-      final Uri url = Uri.https(
-        "maps.googleapis.com",
-        "/maps/api/geocode/json",
-        params,
-      );
+      var result;
 
-      final response = await http.get(url);
+      if (placeResult != null) {
+        //get from placeResult if exists, this save an additonal call to place API
+        result = placeResult['result'];
+      } else {
+        /*final url = Uri.parse("https://maps.googleapis.com/maps/api/geocode/json?"
+            "latlng=${latLng.latitude},${latLng.longitude}&"
+            "language=${widget.localizationItem.languageCode}&"
+            "key=${widget.apiKey}");
+        */
+        final Map<String, String> params = {
+          "key": widget.apiKey,
+          "language": widget.localizationItem.languageCode,
+          "latlng": "${latLng.latitude},${latLng.longitude}",
+        };
+        final Uri url = Uri.https(
+          "maps.googleapis.com",
+          "/maps/api/geocode/json",
+          params,
+        );
 
-      if (response.statusCode != 200) {
-        throw Error();
+        final response = await http.get(url);
+
+        if (response.statusCode != 200) {
+          throw Error();
+        }
+
+        final responseJson = jsonDecode(response.body);
+
+        if (responseJson['results'] == null) {
+          throw Error();
+        }
+
+        result = responseJson['results'][0];
       }
-
-      final responseJson = jsonDecode(response.body);
-
-      if (responseJson['results'] == null) {
-        throw Error();
-      }
-
-      final result = responseJson['results'][0];
 
       setState(() {
         String name,
@@ -545,7 +555,7 @@ class PlacePickerState extends State<PlacePicker> {
         locality = locality ?? administrativeAreaLevel1;
         city = locality;
         this.locationResult = LocationResult()
-          ..name = name
+          ..name = result["name"] ?? name //use name from result if exists
           ..locality = locality
           ..latLng = latLng
           ..formattedAddress = result['formatted_address']
@@ -571,7 +581,7 @@ class PlacePickerState extends State<PlacePicker> {
 
   /// Moves the camera to the provided location and updates other UI features to
   /// match the location.
-  void moveToLocation(LatLng latLng) {
+  void moveToLocation(LatLng latLng, {dynamic placeResult}) {
     this.mapController.future.then((controller) {
       controller.animateCamera(
         CameraUpdate.newCameraPosition(
@@ -581,7 +591,7 @@ class PlacePickerState extends State<PlacePicker> {
 
     setMarker(latLng);
 
-    reverseGeocodeLatLng(latLng);
+    reverseGeocodeLatLng(latLng, placeResult: placeResult);
 
     getNearbyPlaces(latLng);
   }
