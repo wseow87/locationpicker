@@ -30,10 +30,13 @@ class PlacePicker extends StatefulWidget {
   LocalizationItem? localizationItem;
   LatLng defaultLocation = LatLng(10.5381264, 73.8827201);
 
-  final String region;
+  final String? region;
 
   PlacePicker(this.apiKey,
-      {this.displayLocation, this.localizationItem, LatLng? defaultLocation, this.region}) {
+      {this.displayLocation,
+      this.localizationItem,
+      LatLng? defaultLocation,
+      this.region}) {
     if (this.localizationItem == null) {
       this.localizationItem = new LocalizationItem();
     }
@@ -139,7 +142,7 @@ class PlacePickerState extends State<PlacePicker> {
           locationResult = null;
           _delayedPop();
           return Future.value(false);
-        }  else  {
+        } else {
           return Future.value(true);
         }
       },
@@ -195,7 +198,8 @@ class PlacePickerState extends State<PlacePicker> {
                     Padding(
                       child: Text(widget.localizationItem!.nearBy,
                           style: TextStyle(fontSize: 16)),
-                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                     ),
                     Expanded(
                       child: ListView(
@@ -308,18 +312,18 @@ class PlacePickerState extends State<PlacePicker> {
 
       Map<String, String> params = {
         "key": widget.apiKey,
-        "language": widget.localizationItem.languageCode,
+        "language": widget.localizationItem?.languageCode ?? "en",
         "input": place,
         "sessiontoken": this.sessionToken,
       };
 
       if (this.locationResult != null) {
-        params["location"] = "${this.locationResult.latLng.latitude}," +
-            "${this.locationResult.latLng.longitude}";
+        params["location"] = "${this.locationResult!.latLng!.latitude}," +
+            "${this.locationResult!.latLng!.longitude}";
       }
 
       if (widget.region != null) {
-        params["region"] = widget.region;
+        params["region"] = widget.region!;
       }
 
       final Uri url = Uri.https(
@@ -386,7 +390,7 @@ class PlacePickerState extends State<PlacePicker> {
       */
       final Map<String, String> params = {
         "key": widget.apiKey,
-        "language": widget.localizationItem.languageCode,
+        "language": widget.localizationItem?.languageCode ?? "en",
         "placeid": placeId,
       };
       final Uri url = Uri.https(
@@ -409,8 +413,10 @@ class PlacePickerState extends State<PlacePicker> {
 
       final location = responseJson['result']['geometry']['location'];
       if (mapController.isCompleted) {
-        moveToLocation(LatLng(location['lat'], location['lng']),
-        placeResult: responseJson,);
+        moveToLocation(
+          LatLng(location['lat'], location['lng']),
+          placeResult: responseJson,
+        );
       }
     } catch (e) {
       print(e);
@@ -714,7 +720,7 @@ class PlacePickerState extends State<PlacePicker> {
       //moveToLocation(target);
       print('target:$target');
       return target;
-    } on TimeoutException catch (e) {
+    } on TimeoutException {
       final locationData = await Geolocator.getLastKnownPosition();
       if (locationData != null) {
         return LatLng(locationData.latitude, locationData.longitude);
